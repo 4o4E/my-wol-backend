@@ -1,0 +1,21 @@
+### 获取客户端列表
+GET {{baseUrl}}/clients
+
+### 新增客户端
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "id": "0a55398e-09b8-4726-9873-dbef1d153fea",
+  "name": "client1",
+  "machines": {
+    "4623133f-791a-40bb-967d-f633040b6664": {
+      "id": "4623133f-791a-40bb-967d-f633040b6664",
+      "name": "machine1",
+      "deviceIp": "1.1.1.1",
+      "broadcastIp": "1.1.1.1",
+      "mac": "aa:aa:aa:aa:aa:aa",
+      "time": 1731837911126
+    }
+  }
+}
