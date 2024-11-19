@@ -16,8 +16,8 @@ fun main() {
     }
     embeddedServer(
         Netty,
-        port = System.getProperty("port")?.toIntOrNull() ?: 8080,
-        host = System.getProperty("host")?.ifBlank { null } ?: "0.0.0.0",
+        port = System.getenv()["port"]?.toIntOrNull() ?: 8080,
+        host = System.getenv()["host"]?.ifBlank { null } ?: "0.0.0.0",
         module = Application::module
     ).start(wait = true)
 }
