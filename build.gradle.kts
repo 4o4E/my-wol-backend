@@ -12,7 +12,7 @@ repositories {
     mavenCentral()
 }
 
-val ktorVersion = "3.0.1"
+val ktorVersion = "2.3.12"
 fun ktor(module: String, version: String = ktorVersion) = "io.ktor:ktor-${module}:${version}"
 
 dependencies {
@@ -30,7 +30,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("top.e404.mywol.EngineMain")
+    mainClass.set("top.e404.mywol.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")

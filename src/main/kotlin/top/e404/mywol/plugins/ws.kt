@@ -8,17 +8,16 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
-import top.e404.mywol.data.ClientSnapshot
-import top.e404.mywol.data.Storage
 import top.e404.mywol.model.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 fun Application.configureWebsocket() {
     install(WebSockets) {
-        pingPeriod = 15.seconds
-        timeout = 15.seconds
+        pingPeriod = 15.seconds.toJavaDuration()
+        timeout = 15.seconds.toJavaDuration()
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
@@ -39,11 +38,17 @@ private fun Route.websocket() {
             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "id required"))
             return@webSocket
         }
-        val client = Storage.getClient(id) ?: run {
-            close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "client not found"))
+        val name = call.request.header("name") ?: run {
+            close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "name required"))
             return@webSocket
         }
-        WebsocketsHandler(client, this).also {
+        launch(Dispatchers.IO) {
+            val reason = closeReason.await()
+            application.log.info("ws({}) closed: {}", name, reason?.message ?: "unknown")
+            WebsocketsHandler.handlers.remove(id)
+            WebsocketsHandler.syncAll()
+        }
+        WebsocketsHandler(id, name, this).also {
             WebsocketsHandler.handlers[id] = it
             it.loop()
         }
@@ -51,47 +56,37 @@ private fun Route.websocket() {
 }
 
 class WebsocketsHandler(
-    private val client: ClientSnapshot,
+    private val id: String,
+    private val name: String,
     private val session: WebSocketSession
 ) {
     companion object {
         private val log = LoggerFactory.getLogger(WebsocketsHandler::class.java)
         val handlers = ConcurrentHashMap<String, WebsocketsHandler>()
 
-        suspend fun syncAll(clients: List<ClientSnapshot> = Storage.clients) {
-            val packet = getSyncS2cPacket(clients)
+        suspend fun syncAll() {
+            val all = handlers.values.map {
+                WolClient(it.id, it.name, it.machines)
+            } + WolClient(
+                "local", "test", listOf(
+                    WolMachine("test", "test", "aa:aa:aa:aa:aa:aa", "1.1.1.1", "1.1.1.1", MachineState.ON)
+                )
+            )
             for (handler in handlers.values) {
                 try {
+                    // 过滤客户端自己的
+                    val packet = WsSyncS2c(all.filter { it.id != handler.id })
                     handler.send(packet)
                 } catch (t: Throwable) {
-                    log.warn("unexpected error when send sync to ${handler.client.name}", t)
+                    log.warn("unexpected error when send sync to ${handler.name}", t)
                 }
             }
         }
-
-        private fun getSyncS2cPacket(clients: List<ClientSnapshot>) = WsSyncS2c(clients.map { client ->
-            WolClient(
-                client.id,
-                client.name,
-                client.machines.values.map { machine ->
-                    WolMachine(
-                        machine.id,
-                        machine.name,
-                        machine.mac,
-                        machine.deviceIp,
-                        machine.broadcastIp,
-                        handlers[client.id]?.machineInfo?.get(machine.id) ?: MachineState.UNKNOWN
-                    )
-                },
-                if (handlers.containsKey(client.id)) ClientState.ONLINE
-                else ClientState.OFFLINE
-            )
-        })
     }
 
     private val incoming by lazy { session.incoming }
     private val outgoing by lazy { session.outgoing }
-    private val machineInfo = mutableMapOf<String, MachineState>()
+    private var machines = emptyList<WolMachine>()
 
     // req id to resp
     private val queue = ConcurrentHashMap<String, DataContainer>()
@@ -103,8 +98,8 @@ class WebsocketsHandler(
                 return
             }
             val text = frame.readText()
+            log.debug("ws({}) recv: {}", name, text)
             val packet = ktorJson.decodeFromString(WsC2sData.serializer(), text)
-            log.debug("ws({}) recv: {}", client.name, packet)
             receive(packet)
         }
     }
@@ -119,23 +114,10 @@ class WebsocketsHandler(
                 }
             }
             when (packet) {
-                is WsWolResp -> return@launch
-                is WsWolReq -> {
-                    Storage.getClient(packet.clientId)?.machines?.get(packet.machineId)?.let { machine ->
-                        log.debug("ws wol: ${packet.clientId} wol ${packet.machineId}")
-                        val resp = sendAndWaitForQuote<WsWolResp>(WsWolReq(packet.clientId, packet.machineId))
-                        if (resp == null) {
-                            send(WsWolResp(packet.id, false, "timeout"))
-                            return@launch
-                        }
-                        send(WsWolResp(packet.id, resp.success, resp.message))
-                    }
-                }
-
-                is WsSyncMachineState -> {
-                    for ((id, state) in packet.machines) {
-                        machineInfo[id] = state
-                    }
+                is WsWolC2s -> return@launch
+                is WsSyncC2s -> {
+                    machines = packet.machines
+                    syncAll()
                 }
             }
         }
@@ -143,14 +125,14 @@ class WebsocketsHandler(
 
     suspend fun send(packet: WsS2cData) = withContext(Dispatchers.IO) {
         val json = ktorJson.encodeToString(WsS2cData.serializer(), packet)
-        log.debug("ws({}) send: {}", client.name, json)
+        log.debug("ws({}) send: {}", name, json)
         outgoing.send(Frame.Text(json))
     }
 
     @Suppress("UNCHECKED_CAST")
     suspend fun <T : Any> sendAndWaitForQuote(
         packet: WsS2cData,
-        timeout: Duration = 10.seconds
+        timeout: Duration = 3.seconds
     ) = withContext(Dispatchers.IO) {
         val container = DataContainer()
         queue[packet.id] = container

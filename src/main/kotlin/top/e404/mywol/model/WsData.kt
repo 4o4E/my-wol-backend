@@ -23,18 +23,18 @@ sealed interface WsC2sData : PacketData
 sealed interface WsS2cData : PacketData
 
 /**
- * 上传wol列表
+ * 上传本机machine列表
  */
-@SerialName("sync-machine-state")
+@SerialName("sync-c2s")
 @Serializable
-data class WsSyncMachineState(
-    val machines: Map<String, MachineState>,
+data class WsSyncC2s(
+    val machines: List<WolMachine>,
     override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsC2sData
 
 /**
- * 下发设备和wol列表
+ * 更新远程设备列表
  */
 @SerialName("sync-s2c")
 @Serializable
@@ -47,27 +47,26 @@ data class WsSyncS2c(
 /**
  * 发送开机数据包 请求
  */
-@SerialName("wol-req")
+@SerialName("wol-s2c")
 @Serializable
-data class WsWolReq(
-    val clientId: String,
+data class WsWolS2c(
     val machineId: String,
     override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
-) : WsC2sData, WsS2cData
+) : WsS2cData
 
 /**
  * 发送开机数据包 响应
  */
-@SerialName("wol-resp")
+@SerialName("wol-c2s")
 @Serializable
-data class WsWolResp(
+data class WsWolC2s(
     val origin: String,
     val success: Boolean,
     val message: String,
     override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
-) : WsC2sData, WsS2cData
+) : WsC2sData
 
 /**
  * 运行了app的设备
@@ -76,8 +75,7 @@ data class WsWolResp(
 data class WolClient(
     val id: String,
     val name: String,
-    val machines: List<WolMachine>,
-    val state: ClientState
+    val machines: List<WolMachine>
 )
 
 /**
@@ -94,33 +92,21 @@ data class WolMachine(
 )
 
 /**
- * app客户端状态
- */
-@Serializable
-enum class ClientState {
-    /**
-     * client在线
-     */
-    ONLINE,
-    /**
-     * client离线
-     */
-    OFFLINE
-}
-
-/**
  * 网络设备状态
  */
 @Serializable
+@Suppress("UNUSED")
 enum class MachineState {
     /**
      * 开机
      */
     ON,
+
     /**
      * 没开机
      */
     OFF,
+
     /**
      * 由于client掉线所以不知道开没没开机
      */
