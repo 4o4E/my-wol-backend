@@ -67,11 +67,7 @@ class WebsocketsHandler(
         suspend fun syncAll() {
             val all = handlers.values.map {
                 WolClient(it.id, it.name, it.machines)
-            } + WolClient(
-                "local", "test", listOf(
-                    WolMachine("test", "test", "aa:aa:aa:aa:aa:aa", "1.1.1.1", "1.1.1.1", MachineState.ON)
-                )
-            )
+            }
             for (handler in handlers.values) {
                 try {
                     // 过滤客户端自己的
@@ -153,6 +149,7 @@ class WebsocketsHandler(
     } as T?
 
     private class DataContainer {
+        @Volatile
         var data: WsC2sData? = null
     }
 }

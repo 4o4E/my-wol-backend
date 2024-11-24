@@ -61,7 +61,6 @@ data class WsWolS2c(
 @SerialName("wol-c2s")
 @Serializable
 data class WsWolC2s(
-    val origin: String,
     val success: Boolean,
     val message: String,
     override val quote: String? = null,
