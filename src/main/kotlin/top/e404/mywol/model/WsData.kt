@@ -84,9 +84,6 @@ data class WolClient(
 data class WolMachine(
     val id: String,
     val name: String,
-    val mac: String,
-    val deviceIp: String,
-    val broadcastIp: String,
     val state: MachineState
 )
 
