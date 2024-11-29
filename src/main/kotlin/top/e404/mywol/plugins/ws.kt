@@ -68,6 +68,7 @@ class WebsocketsHandler(
             val all = handlers.values.map {
                 WolClient(it.id, it.name, it.machines)
             }
+            log.info("current clients:${all.joinToString { client -> "\n${client.name}: ${client.machines.map { it.name }}" }}")
             for (handler in handlers.values) {
                 try {
                     // 过滤客户端自己的
@@ -110,11 +111,11 @@ class WebsocketsHandler(
                 }
             }
             when (packet) {
-                is WsWolC2s -> return@launch
                 is WsSyncC2s -> {
                     machines = packet.machines
                     syncAll()
                 }
+                else -> return@launch
             }
         }
     }

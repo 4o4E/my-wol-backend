@@ -68,6 +68,60 @@ data class WsWolC2s(
 ) : WsC2sData
 
 /**
+ * 发送ssh命令 请求
+ */
+@SerialName("ssh-s2c")
+@Serializable
+data class WsSshS2c(
+    val machineId: String,
+    val command: String,
+    override val quote: String? = null,
+    override val id: String = UUID.randomUUID().toString(),
+) : WsS2cData
+
+/**
+ * 发送ssh命令 响应
+ */
+@SerialName("ssh-c2s")
+@Serializable
+data class WsSshC2s(
+    val success: Boolean,
+    val result: String,
+    override val quote: String? = null,
+    override val id: String = UUID.randomUUID().toString(),
+) : WsC2sData
+
+/**
+ * 同步ssh命令历史 请求
+ */
+@SerialName("ssh-history-s2c")
+@Serializable
+data class WsSshHistoryS2c(
+    val machineId: String,
+    override val quote: String? = null,
+    override val id: String = UUID.randomUUID().toString(),
+) : WsS2cData
+
+/**
+ * 同步ssh命令历史 响应
+ */
+@SerialName("ssh-history-c2s")
+@Serializable
+data class WsSshHistoryC2s(
+    val success: Boolean,
+    val message: String,
+    val history: List<SshHistory>,
+    override val quote: String? = null,
+    override val id: String = UUID.randomUUID().toString(),
+) : WsC2sData
+
+@Serializable
+data class SshHistory(
+    val command: String,
+    val result: String
+)
+
+/**
  * 运行了app的设备
  */
 @Serializable
