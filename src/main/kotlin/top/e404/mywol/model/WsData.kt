@@ -9,11 +9,6 @@ interface PacketData {
      * packet唯一id
      */
     val id: String
-
-    /**
-     * 回复的packet的id
-     */
-    val quote: String?
 }
 
 @Serializable
@@ -22,6 +17,14 @@ sealed interface WsC2sData : PacketData
 @Serializable
 sealed interface WsS2cData : PacketData
 
+@Serializable
+sealed interface WsC2sDataWithQuote : WsC2sData {
+    /**
+     * 回复的packet的id
+     */
+    val quote: String
+}
+
 /**
  * 上传本机machine列表
  */
@@ -29,7 +32,6 @@ sealed interface WsS2cData : PacketData
 @Serializable
 data class WsSyncC2s(
     val machines: List<WolMachine>,
-    override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsC2sData
 
@@ -40,7 +42,6 @@ data class WsSyncC2s(
 @Serializable
 data class WsSyncS2c(
     val clients: List<WolClient>,
-    override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsS2cData
 
@@ -51,7 +52,6 @@ data class WsSyncS2c(
 @Serializable
 data class WsWolS2c(
     val machineId: String,
-    override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsS2cData
 
@@ -63,9 +63,9 @@ data class WsWolS2c(
 data class WsWolC2s(
     val success: Boolean,
     val message: String,
-    override val quote: String? = null,
+    override val quote: String,
     override val id: String = UUID.randomUUID().toString(),
-) : WsC2sData
+) : WsC2sDataWithQuote
 
 /**
  * 发送ssh命令 请求
@@ -75,7 +75,6 @@ data class WsWolC2s(
 data class WsSshS2c(
     val machineId: String,
     val command: String,
-    override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsS2cData
 
@@ -87,9 +86,9 @@ data class WsSshS2c(
 data class WsSshC2s(
     val success: Boolean,
     val result: String,
-    override val quote: String? = null,
+    override val quote: String,
     override val id: String = UUID.randomUUID().toString(),
-) : WsC2sData
+) : WsC2sDataWithQuote
 
 /**
  * 同步ssh命令历史 请求
@@ -98,7 +97,6 @@ data class WsSshC2s(
 @Serializable
 data class WsSshHistoryS2c(
     val machineId: String,
-    override val quote: String? = null,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsS2cData
 
@@ -111,9 +109,31 @@ data class WsSshHistoryC2s(
     val success: Boolean,
     val message: String,
     val history: List<SshHistory>,
-    override val quote: String? = null,
+    override val quote: String,
     override val id: String = UUID.randomUUID().toString(),
-) : WsC2sData
+) : WsC2sDataWithQuote
+
+/**
+ * ssh关机 请求
+ */
+@SerialName("ssh-shutdown-s2c")
+@Serializable
+data class WsSshShutdownS2c(
+    val machineId: String,
+    override val id: String = UUID.randomUUID().toString(),
+) : WsS2cData
+
+/**
+ * ssh关机 响应
+ */
+@SerialName("ssh-shutdown-c2s")
+@Serializable
+data class WsSshShutdownC2s(
+    val success: Boolean,
+    val message: String,
+    override val quote: String,
+    override val id: String = UUID.randomUUID().toString(),
+) : WsC2sDataWithQuote
 
 @Serializable
 data class SshHistory(
@@ -138,7 +158,10 @@ data class WolClient(
 data class WolMachine(
     val id: String,
     val name: String,
-    val state: MachineState
+    val time: Long,
+    val state: MachineState,
+    val isSshConfigured: Boolean,
+    val canShutdown: Boolean
 )
 
 /**

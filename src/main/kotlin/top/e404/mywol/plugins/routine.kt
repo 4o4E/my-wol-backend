@@ -55,4 +55,11 @@ internal fun Route.configureRouting() {
         if (!resp.success) notFound(resp.message)
         call.respond(resp.history)
     }
+    post("/ssh/shutdown") {
+        val req = call.receive<WolReq>()
+        val handler = WebsocketsHandler.handlers[req.clientId] ?: fail("客户端未连接")
+        val resp = handler.sendAndWaitForQuote<WsSshShutdownC2s>(WsSshShutdownS2c(req.machineId)) ?: fail("连接超时")
+        if (!resp.success) notFound(resp.message)
+        ok()
+    }
 }

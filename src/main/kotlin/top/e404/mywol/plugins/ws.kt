@@ -103,7 +103,7 @@ class WebsocketsHandler(
 
     private suspend fun receive(packet: WsC2sData) = coroutineScope {
         launch(Dispatchers.IO) {
-            if (packet.quote != null) {
+            if (packet is WsC2sDataWithQuote) {
                 log.debug("ws quote: ${packet.id} quotes ${packet.quote}")
                 val container = queue[packet.quote]
                 if (container != null) {
