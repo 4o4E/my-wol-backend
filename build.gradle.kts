@@ -37,6 +37,6 @@ application {
 }
 
 idea {
-    module.excludeDirs.add(file(".run"))
+    module.excludeDirs.add(file(".run/work"))
     module.excludeDirs.add(file(".kotlin"))
 }

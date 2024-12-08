@@ -1,0 +1,29 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="runApplication" type="KtorApplicationConfigurationType" factoryName="Ktor">
+    <envs>
+      <env name="host" value="0.0.0.0" />
+      <env name="port" value="8080" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="top.e404.mywol.ApplicationKt" />
+    <module name="my-wol-backend.main" />
+    <option name="WORKING_DIRECTORY" value=".run/work" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="top.e404.mywol.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <option name="alternativeJrePath" />
+    <option name="alternativeJrePathEnabled" value="false" />
+    <option name="includeProvidedScope" value="false" />
+    <option name="mainClass" value="top.e404.mywol.ApplicationKt" />
+    <option name="passParentEnvs" value="true" />
+    <option name="programParameters" value="" />
+    <option name="shortenCommandLine" />
+    <option name="vmParameters" />
+    <option name="workingDirectory" value=".run\work" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
