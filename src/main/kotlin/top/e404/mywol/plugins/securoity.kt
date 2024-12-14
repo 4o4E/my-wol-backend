@@ -7,7 +7,7 @@ internal val token = System.getenv()["token"]?.ifBlank { null }
 
 fun Application.configureSecurity() {
     authentication {
-        bearer(name = "Basic") {
+        bearer(name = "token") {
             realm = "mywol"
             authenticate { credentials ->
                 if (credentials.token == token) UserIdPrincipal(token)
