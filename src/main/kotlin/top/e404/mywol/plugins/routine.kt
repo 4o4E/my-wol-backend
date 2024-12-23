@@ -45,8 +45,8 @@ internal fun Route.configureRouting() {
         val req = call.receive<SshReq>()
         val handler = WebsocketsHandler.handlers[req.clientId] ?: fail("客户端未连接")
         val resp = handler.sendAndWaitForQuote<WsSshC2s>(WsSshS2c(req.machineId, req.command)) ?: fail("连接超时")
-        if (!resp.success) notFound(resp.result)
-        call.respond(resp.result)
+        if (!resp.success) notFound(resp.message)
+        call.respond(resp.result!!)
     }
     post("/ssh/history") {
         val req = call.receive<WolReq>()
@@ -60,6 +60,6 @@ internal fun Route.configureRouting() {
         val handler = WebsocketsHandler.handlers[req.clientId] ?: fail("客户端未连接")
         val resp = handler.sendAndWaitForQuote<WsSshShutdownC2s>(WsSshShutdownS2c(req.machineId)) ?: fail("连接超时")
         if (!resp.success) notFound(resp.message)
-        ok()
+        call.respond(resp.result!!)
     }
 }

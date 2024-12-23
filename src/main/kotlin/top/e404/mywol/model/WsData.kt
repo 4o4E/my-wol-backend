@@ -85,7 +85,8 @@ data class WsSshS2c(
 @Serializable
 data class WsSshC2s(
     val success: Boolean,
-    val result: String,
+    val message: String,
+    val result: SshResult?,
     override val quote: String,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsC2sDataWithQuote
@@ -131,6 +132,7 @@ data class WsSshShutdownS2c(
 data class WsSshShutdownC2s(
     val success: Boolean,
     val message: String,
+    val result: SshResult?,
     override val quote: String,
     override val id: String = UUID.randomUUID().toString(),
 ) : WsC2sDataWithQuote
@@ -138,7 +140,14 @@ data class WsSshShutdownC2s(
 @Serializable
 data class SshHistory(
     val command: String,
-    val result: String
+    val result: SshResult
+)
+
+@Serializable
+data class SshResult(
+    val exitStatus: Int,
+    val out: String,
+    val err: String,
 )
 
 /**
